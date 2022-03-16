@@ -18,5 +18,6 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # 配置总路由
     path('', include('apps.book.urls')),
 ]
