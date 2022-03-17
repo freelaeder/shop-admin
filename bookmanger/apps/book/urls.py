@@ -8,4 +8,6 @@ urlpatterns = [
     path('books/<int:id>', BookOneView.as_view()),
     # 人物
     path('peoples/<int:pid>', PeopleView.as_view()),
+    # 练习 modelSerializer
+    path('mbooks/', MbookView.as_view()),
 ]
