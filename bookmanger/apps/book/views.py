@@ -6,9 +6,14 @@ from django.shortcuts import render
 
 # Create your views here.
 from django.views import View
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.mixins import ListModelMixin
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.book.models import BookInfo, PeopleInfo
-from apps.book.serializers import BookInfoSerializer, PeopleInfoSerializer, BookModelSerializer
+from apps.book.serializers import BookInfoSerializer, PeopleInfoSerializer, BookModelSerializer, PeopleModelSerializer
 
 
 class BookListView(View):
@@ -202,12 +207,44 @@ class MbookView(View):
 
     # 添加一条
     def post(self, request):
+
+        # data_dict = {
+        #     'book_id': 6,
+        #     'name': '靖哥哥111',
+        #     'password': '123456abc',
+        #     'description': '描述',
+        #     'is_delete': 1
+        # }
+
+        # 注意保存多个数据时，记得添加many = True
+
+        # data_dict = [
+        #     {
+        #         'book_id': 19,
+        #         'name': '靖妹妹～～～',
+        #         'password': '123456abc'
+        #     },
+        #     {
+        #         'book_id': 19,
+        #         'name': '靖表哥～～～',
+        #         'password': '123456abc'
+        #     }
+        # ]
+
         data_dict = {
-            "name": "readonly",
-            "pub_date": "2022-03-17",
-            'readcount': 88,
-            'commentcount': 20
+            'name': '离离原上草',
+            'people': [
+                {
+                    'name': '靖妹妹111',
+                    'password': '123456abc'
+                },
+                {
+                    'name': '靖表哥222',
+                    'password': '123456abc'
+                }
+            ]
         }
+        # 添加书籍 需要改换书籍的序列化器·
         mbs = BookModelSerializer(data=data_dict)
         try:
             mbs.is_valid(raise_exception=True)
@@ -218,3 +255,50 @@ class MbookView(View):
             return JsonResponse({'code': 400})
 
         return JsonResponse('ok', safe=False)
+
+
+# 练习Apiview
+class AbookView(APIView):
+    def get(self, request):
+        print(f'request.GET{request.GET}')
+        print(f'request.query_params{request.query_params}')
+        # 查询数据
+        books = BookInfo.objects.all()
+        # 创建序列化器，并传递查询结果
+        bms = BookModelSerializer(books, many=True)
+        # 返回结果
+
+        return Response(bms.data)
+
+    def post(self, request):
+        # print(f'request.body{request.body}')
+        # print(f'request.post{request.post}')
+        # data_dict = json.loads(request.body)
+        print(request.data)
+        print(type(request.data))
+        return Response({'name': 'freelaeder'}, status=status.HTTP_200_OK)
+
+
+class GbookView(ListModelMixin, GenericAPIView):
+    # 重写queryset 方法
+    def get_queryset(self):
+        return BookInfo.objects.all()
+
+    # 或者添加属性名
+    # queryset = BookInfo.objects.all()
+
+    # 重写serializer 方法
+    # def get_serializer_class(self):
+    #     return BookModelSerializer
+
+    # 或者添加属性名 值是需要使用的序列化器
+    serializer_class = BookModelSerializer
+
+    def get(self, request):
+        # 查询搜有的图书
+        # books = self.get_queryset()
+        # 创建序列化器，传递查询集 ，注意添加many =True
+        # bms = self.get_serializer(books, many=True)
+
+        # return Response(data=bms.data, status=status.HTTP_200_OK)
+        return self.list(request)

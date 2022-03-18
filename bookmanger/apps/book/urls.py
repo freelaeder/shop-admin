@@ -10,4 +10,8 @@ urlpatterns = [
     path('peoples/<int:pid>', PeopleView.as_view()),
     # 练习 modelSerializer
     path('mbooks/', MbookView.as_view()),
+    # 练习 APIView
+    path('abooks/', AbookView.as_view()),
+    # 练习GenericAPIView
+    path('gbooks/', GbookView.as_view()),
 ]

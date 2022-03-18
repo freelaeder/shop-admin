@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.book.models import BookInfo
+from apps.book.models import BookInfo, PeopleInfo
 
 
 class PeopleSerializer(serializers.Serializer):
@@ -24,7 +24,7 @@ class BookInfoSerializer(serializers.Serializer):
     commentcount = serializers.IntegerField(label='评论量')
 
     # 注意要跟models中的外键保持一致
-    # people = PeopleSerializer(many=True, required=False)
+    people = PeopleSerializer(many=True, required=False)
 
     # 创建
     def create(self, validated_data):
@@ -71,21 +71,60 @@ class PeopleInfoSerializer(serializers.Serializer):
     book = BookInfoSerializer()
 
 
+# 人物
+class PeopleModelSerializer(serializers.ModelSerializer):
+    # book_id 用来替换 自动生成的readonly（）
+    # 重写 会替换自动生成的
+    book_id = serializers.IntegerField(required=False)
+    book = serializers.StringRelatedField()
+
+    class Meta:
+        # 指定model 表
+        model = PeopleInfo
+        # 指定字段
+        fields = ('id', 'book_id', 'book', 'name', 'password', 'is_delete', 'description')
+        # 添加参数
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'is_delete': {'read_only': True}
+        }
+
+
+# 书籍
 class BookModelSerializer(serializers.ModelSerializer):
+    # 指定people 字段指向people表
+    # people = PeopleModelSerializer(many=True)
+
     class Meta:
         # 指定模型类
         model = BookInfo
         # 获取所有字段
         # fields = '__all__'
         # 指定字段
-        # fields = ('id', 'name', 'readcount', 'commentcount', 'pub_date')
+        fields = ('id', 'name', 'readcount', 'commentcount', 'pub_date')
         # 排除字段
-        exclude = ('image', 'is_delete',)
+        # exclude = ('image', 'is_delete',)
 
         # 添加只读
         read_only_fields = ('readcount',)
+        # 此方法执行不成功，改用下方
         # write_only_fields = ('commentcount',)
         extra_kwargs = {
             # 添加只写
-            'commentcount': {'write_only': True}
+            # 'commentcount': {'write_only': True}
         }
+
+    def create(self, validated_data):
+        # 获取参数
+        print(f'validated_data{validated_data}')
+        # 从数据中删除people
+        peoples = validated_data.pop('people')
+        print(f'peoples{peoples}')
+        # 保存图书
+        book = BookInfo.objects.create(**validated_data)
+        # 保存人物
+        for p in peoples:
+            PeopleInfo.objects.create(book=book, **p)
+
+        # 返回图书
+        return book
