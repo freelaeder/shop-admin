@@ -11,6 +11,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 
 from apps.book.models import BookInfo, PeopleInfo
 from apps.book.serializers import BookInfoSerializer, PeopleInfoSerializer, BookModelSerializer, PeopleModelSerializer
@@ -302,3 +303,31 @@ class GbookView(ListModelMixin, GenericAPIView):
 
         # return Response(data=bms.data, status=status.HTTP_200_OK)
         return self.list(request)
+
+
+# modelViewSet  (最终使用)
+
+class BookViewSet(ModelViewSet):
+    # 重写queryset方法
+    queryset = BookInfo.objects.all()
+    # 指定序列化器
+    serializer_class = BookModelSerializer
+
+    # 根据需求重写各个方法
+    # list 查所有 create 增 retrieve 查询一个
+    # update 改全部  partial_update 改部分
+    # destroy 删
+    # 获取全部
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # 根据自己的需求改写return
+        return Response({'code': 0, 'errmsg': 'ok', 'data': response.data})
+
+    # 获取一个
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            response = super().retrieve(request, *args, **kwargs)
+        except Exception as e:
+            return JsonResponse({'code': 400, 'errmsg': 'id错误'})
+
+        return JsonResponse({'code': 0, 'errmsg': 'ok', 'data': response.data})

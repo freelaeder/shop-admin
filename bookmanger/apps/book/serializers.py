@@ -114,17 +114,17 @@ class BookModelSerializer(serializers.ModelSerializer):
             # 'commentcount': {'write_only': True}
         }
 
-    def create(self, validated_data):
-        # 获取参数
-        print(f'validated_data{validated_data}')
-        # 从数据中删除people
-        peoples = validated_data.pop('people')
-        print(f'peoples{peoples}')
-        # 保存图书
-        book = BookInfo.objects.create(**validated_data)
-        # 保存人物
-        for p in peoples:
-            PeopleInfo.objects.create(book=book, **p)
-
-        # 返回图书
-        return book
+    # def create(self, validated_data):
+    #     # 获取参数
+    #     print(f'validated_data{validated_data}')
+    #     # 从数据中删除people
+    #     peoples = validated_data.pop('people')
+    #     print(f'peoples{peoples}')
+    #     # 保存图书
+    #     book = BookInfo.objects.create(**validated_data)
+    #     # 保存人物
+    #     for p in peoples:
+    #         PeopleInfo.objects.create(book=book, **p)
+    #
+    #     # 返回图书
+    #     return book
