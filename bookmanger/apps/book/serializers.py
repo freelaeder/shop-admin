@@ -82,7 +82,8 @@ class PeopleModelSerializer(serializers.ModelSerializer):
         # 指定model 表
         model = PeopleInfo
         # 指定字段
-        fields = ('id', 'book_id', 'book', 'name', 'password', 'is_delete', 'description')
+        fields = '__all__'
+        # fields = ('id', 'book_id', 'book', 'name', 'password', 'is_delete', 'description')
         # 添加参数
         extra_kwargs = {
             'password': {'write_only': True},
@@ -99,14 +100,15 @@ class BookModelSerializer(serializers.ModelSerializer):
         # 指定模型类
         model = BookInfo
         # 获取所有字段
-        # fields = '__all__'
+        fields = '__all__'
         # 指定字段
-        fields = ('id', 'name', 'readcount', 'commentcount', 'pub_date')
+        # 如果指定了people 下面必须写 出people
+        # fields = ('id', 'name', 'readcount', 'commentcount', 'pub_date')
         # 排除字段
         # exclude = ('image', 'is_delete',)
 
         # 添加只读
-        read_only_fields = ('readcount',)
+        # read_only_fields = ('readcount',)
         # 此方法执行不成功，改用下方
         # write_only_fields = ('commentcount',)
         extra_kwargs = {
@@ -114,17 +116,17 @@ class BookModelSerializer(serializers.ModelSerializer):
             # 'commentcount': {'write_only': True}
         }
 
-    # def create(self, validated_data):
-    #     # 获取参数
-    #     print(f'validated_data{validated_data}')
-    #     # 从数据中删除people
-    #     peoples = validated_data.pop('people')
-    #     print(f'peoples{peoples}')
-    #     # 保存图书
-    #     book = BookInfo.objects.create(**validated_data)
-    #     # 保存人物
-    #     for p in peoples:
-    #         PeopleInfo.objects.create(book=book, **p)
-    #
-    #     # 返回图书
-    #     return book
+    def create(self, validated_data):
+        # 获取参数
+        print(f'validated_data{validated_data}')
+        # 从数据中删除people
+        peoples = validated_data.pop('people')
+        print(f'peoples{peoples}')
+        # 保存图书
+        book = BookInfo.objects.create(**validated_data)
+        # 保存人物
+        for p in peoples:
+            PeopleInfo.objects.create(book=book, **p)
+
+        # 返回图书
+        return book

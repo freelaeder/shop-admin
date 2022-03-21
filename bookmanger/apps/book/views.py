@@ -92,11 +92,10 @@ class BookListView(View):
 # 针对单个图书
 class BookOneView(View):
     # 获取一条数据
-    def get(self, request, id):
+    def get(self, request, bname):
         # 连接数据库
         try:
-            book = BookInfo.objects.get(id=id)
-            print(f'book{book.id}')
+            book = BookInfo.objects.get(name=bname)
             # 获取图书对应的人物
             # peoples = book.people.all()
             # print(f'peoples{peoples}')
@@ -118,7 +117,7 @@ class BookOneView(View):
         return JsonResponse(data, safe=False)
 
     # 修改一条数据
-    def put(self, request, id):
+    def put(self, request, bname):
         # # 获取参数
         # data_dict = json.loads(request.body)
         # print(data_dict)
@@ -143,7 +142,7 @@ class BookOneView(View):
         #     return JsonResponse('err', safe=False)
 
         # 使用反序列化更新数据
-        bookid = BookInfo.objects.get(id=id)
+        bookid = BookInfo.objects.get(name=bname)
         print(f'bookid{bookid}')
         data_dict = {
             "name": "99",
@@ -166,12 +165,12 @@ class BookOneView(View):
         return JsonResponse('ok', safe=False)
 
     # 删除一条数据
-    def delete(self, request, id):
+    def delete(self, request, bname):
         try:
             # 如果没有传递id
             if not id:
                 return JsonResponse('err', safe=False)
-            BookInfo.objects.filter(id=id).delete()
+            BookInfo.objects.filter(name=bname).delete()
         except Exception as e:
             print(e)
             return JsonResponse('err', safe=False)
@@ -233,15 +232,20 @@ class MbookView(View):
         # ]
 
         data_dict = {
-            'name': '离离原上草',
-            'people': [
+            "name": "射雕英雄外传yyyy",
+            "pub_date": "1980-05-01",
+            "readcount": 12,
+            "commentcount": 34,
+            "people": [
                 {
-                    'name': '靖妹妹111',
-                    'password': '123456abc'
+                    "name": "郭靖",
+                    "password": "123456abc",
+                    "description": "降龙十八掌"
                 },
                 {
-                    'name': '靖表哥222',
-                    'password': '123456abc'
+                    "name": "黄蓉",
+                    "password": "123456abc",
+                    "description": "打狗棍法"
                 }
             ]
         }
@@ -261,14 +265,26 @@ class MbookView(View):
 # 练习Apiview
 class AbookView(APIView):
     def get(self, request):
-        print(f'request.GET{request.GET}')
-        print(f'request.query_params{request.query_params}')
-        # 查询数据
-        books = BookInfo.objects.all()
-        # 创建序列化器，并传递查询结果
-        bms = BookModelSerializer(books, many=True)
-        # 返回结果
+        # print(f'request.GET{request.GET}')
+        # 获取数据 如果有readcount字段，进行查询
 
+        print(f'request.query_params{request.query_params}')
+        count = request.query_params.get('readcount')
+        print(count)
+        # 如果没有，返回所有图书
+        if not count:
+            # 查询数据
+            books = BookInfo.objects.all()
+            # 创建序列化器，并传递查询结果
+            bms = BookModelSerializer(books, many=True)
+            # 返回结果
+            return Response(bms.data)
+        # ***********************************************
+        # 如果有返回，大于该阅读量的图书
+        mbook = BookInfo.objects.filter(readcount__gt=count)
+        # 创建序列化器，并传递查询结果
+        bms = BookModelSerializer(mbook, many=True)
+        # 返回结果
         return Response(bms.data)
 
     def post(self, request):
@@ -306,7 +322,8 @@ class GbookView(ListModelMixin, GenericAPIView):
 
 
 # modelViewSet  (最终使用)
-
+# 使用三级视图完成图书和人物的增删改查
+# 完成图书
 class BookViewSet(ModelViewSet):
     # 重写queryset方法
     queryset = BookInfo.objects.all()
@@ -322,6 +339,34 @@ class BookViewSet(ModelViewSet):
         response = super().list(request, *args, **kwargs)
         # 根据自己的需求改写return
         return Response({'code': 0, 'errmsg': 'ok', 'data': response.data})
+
+    # 获取一个
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            response = super().retrieve(request, *args, **kwargs)
+        except Exception as e:
+            return JsonResponse({'code': 400, 'errmsg': 'id错误'})
+
+        return JsonResponse({'code': 0, 'errmsg': 'ok', 'data': response.data})
+
+
+# 完成人物
+class PeoViewSet(ModelViewSet):
+    queryset = PeopleInfo.objects.all()
+    serializer_class = PeopleModelSerializer
+
+    # 获取全部
+    def list(self, request, *args, **kwargs):
+        try:
+            response = super().list(request, *args, **kwargs)
+            # 查询总量
+            count = self.queryset.count()
+
+        except Exception as e:
+            print(e)
+            return JsonResponse({'code': 400, 'errmsg': '数据库错误'})
+        # 根据自己的需求改写return
+        return Response({'code': 0, 'errmsg': 'ok', 'count': count, 'data': response.data})
 
     # 获取一个
     def retrieve(self, request, *args, **kwargs):
