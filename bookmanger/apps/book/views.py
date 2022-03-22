@@ -7,14 +7,24 @@ from django.shortcuts import render
 # Create your views here.
 from django.views import View
 from rest_framework import status
+from rest_framework.authentication import SessionAuthentication
 from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from apps.book.models import BookInfo, PeopleInfo
 from apps.book.serializers import BookInfoSerializer, PeopleInfoSerializer, BookModelSerializer, PeopleModelSerializer
+
+
+# 定义分页
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 3
+    page_size_query_param = 'page_size'
+    max_page_size = 10
 
 
 class BookListView(View):
@@ -235,19 +245,8 @@ class MbookView(View):
             "name": "射雕英雄外传yyyy",
             "pub_date": "1980-05-01",
             "readcount": 12,
-            "commentcount": 34,
-            "people": [
-                {
-                    "name": "郭靖",
-                    "password": "123456abc",
-                    "description": "降龙十八掌"
-                },
-                {
-                    "name": "黄蓉",
-                    "password": "123456abc",
-                    "description": "打狗棍法"
-                }
-            ]
+            "commentcount": 34
+
         }
         # 添加书籍 需要改换书籍的序列化器·
         mbs = BookModelSerializer(data=data_dict)
@@ -354,6 +353,12 @@ class BookViewSet(ModelViewSet):
 class PeoViewSet(ModelViewSet):
     queryset = PeopleInfo.objects.all()
     serializer_class = PeopleModelSerializer
+    # 单个视图，设置单独认证方式
+    authentication_classes = [SessionAuthentication]
+    # 设置单独的权限
+    permission_classes = [IsAuthenticated]
+    # 设置分页
+    pagination_class = LargeResultsSetPagination
 
     # 获取全部
     def list(self, request, *args, **kwargs):

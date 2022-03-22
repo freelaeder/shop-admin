@@ -94,7 +94,7 @@ class PeopleModelSerializer(serializers.ModelSerializer):
 # 书籍
 class BookModelSerializer(serializers.ModelSerializer):
     # 指定people 字段指向people表
-    # people = PeopleModelSerializer(many=True)
+    people = PeopleModelSerializer(many=True, required=False)
 
     class Meta:
         # 指定模型类
@@ -102,7 +102,7 @@ class BookModelSerializer(serializers.ModelSerializer):
         # 获取所有字段
         fields = '__all__'
         # 指定字段
-        # 如果指定了people 下面必须写 出people
+        # 如果指定了people 下面必须写出
         # fields = ('id', 'name', 'readcount', 'commentcount', 'pub_date')
         # 排除字段
         # exclude = ('image', 'is_delete',)
@@ -119,14 +119,20 @@ class BookModelSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # 获取参数
         print(f'validated_data{validated_data}')
-        # 从数据中删除people
-        peoples = validated_data.pop('people')
-        print(f'peoples{peoples}')
-        # 保存图书
-        book = BookInfo.objects.create(**validated_data)
-        # 保存人物
-        for p in peoples:
-            PeopleInfo.objects.create(book=book, **p)
+        try:
+            # 从数据中删除people
+            peoples = validated_data.pop('people')
+            print(f'peoples{peoples}')
+        except Exception as e:
+
+            return super().create(validated_data)
+        else:
+
+            # 保存图书
+            book = BookInfo.objects.create(**validated_data)
+            # 保存人物
+            for p in peoples:
+                PeopleInfo.objects.create(book=book, **p)
 
         # 返回图书
         return book
